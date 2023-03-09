@@ -84,11 +84,14 @@ function generateAICars(N) {
     return cars;
 }
 
-animate();
+validate();
 
 
 
-function animate(time) {
+function validate(time) {
+    roadCanvas.height = window.innerHeight;
+    networkCanvas.height = window.innerHeight;
+
     let allTraffic = cars.concat(traffic);
     for (let i = 0; i < traffic.length; i++) {
         traffic[i].update(rightRoad.borders, allTraffic);
@@ -101,13 +104,19 @@ function animate(time) {
             ...cars.map(c => c.y)
         ));
 
-    roadCanvas.height = window.innerHeight;
-    networkCanvas.height = window.innerHeight;
-
-    roadCtx.save();
     roadCtx.translate(0, -bestCar.y + roadCanvas.height * 0.8);
-
     rightRoad.draw(roadCtx);
+
+    drawCars(roadCtx);
+
+    if (bestCar.brain) {
+        networkCtx.lineDashOffset = -time / 50;
+        Visualizer.drawNetwork(networkCtx, bestCar.brain);
+    }
+    requestAnimationFrame(validate);
+}
+
+function drawCars(roadCtx) {
     for (let i = 0; i < traffic.length; i++) {
         traffic[i].draw(roadCtx);
     }
@@ -118,12 +127,4 @@ function animate(time) {
     roadCtx.globalAlpha = 1;
     bestCar.draw(roadCtx, true);
     myCar.draw(roadCtx, true);
-
-    roadCtx.restore();
-
-    networkCtx.lineDashOffset = -time / 50;
-    if (bestCar.brain) {
-        Visualizer.drawNetwork(networkCtx, bestCar.brain);
-    }
-    requestAnimationFrame(animate);
 }

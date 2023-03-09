@@ -1,42 +1,48 @@
 class Car {
-    constructor(x, y, width, height, controlType, maxSpeed = 3, color = "blue") {
+    constructor(x, y, config) {
+        this.controls = new Controls(config.controlType);
         this.x = x;
         this.y = y;
-        this.width = width;
-        this.height = height;
+
+        this.config = config;
+        this.width = config.width;
+        this.height = config.height;
 
         this.speed = 0;
-        this.acceleration = 0.2;
-        this.maxSpeed = maxSpeed;
-        this.friction = 0.05;
+        this.acceleration = config.acceleration;
+        this.maxSpeed = config.maxSpeed;
+        this.friction = config.friction;
         this.angle = 0;
         this.damaged = false;
 
-        this.useBrain = controlType == "AI";
-
-        if (controlType != "DUMMY") {
-            this.sensor = new Sensor(this);
-            this.brain = new NeuralNetwork(
-                [this.sensor.rayCount, 6, 4]
-            );
-        }
-        this.controls = new Controls(controlType);
 
         this.img = new Image();
-        this.img.src = "car.png"
+        this.img.src = "assets/car.png"
 
         this.mask = document.createElement("canvas");
-        this.mask.width = width;
-        this.mask.height = height;
+        this.mask.width = config.width;
+        this.mask.height = config.height;
 
         const maskCtx = this.mask.getContext("2d");
         this.img.onload = () => {
-            maskCtx.fillStyle = color;
+            maskCtx.fillStyle = config.color;
             maskCtx.rect(0, 0, this.width, this.height);
             maskCtx.fill();
 
             maskCtx.globalCompositeOperation = "destination-atop";
             maskCtx.drawImage(this.img, 0, 0, this.width, this.height);
+        }
+    }
+
+    addSensor(config) {
+        this.sensor = new Sensor(this, config);
+    }
+
+    addBrain(hiddenNodes) {
+        if (this.sensor) {
+            this.brain = new NeuralNetwork(
+                [this.sensor.config.rayCount, hiddenNodes, 4]
+            );
         }
     }
 
@@ -51,9 +57,10 @@ class Car {
             const offsets = this.sensor.readings.map(
                 s => s == null ? 0 : 1 - s.offset
             );
-            const outputs = NeuralNetwork.feedForward(offsets, this.brain);
 
-            if (this.useBrain) {
+            if (this.brain) {
+                const outputs = NeuralNetwork.feedForward(offsets, this.brain);
+
                 this.controls.forward = outputs[0];
                 this.controls.left = outputs[1];
                 this.controls.right = outputs[2];
@@ -69,7 +76,7 @@ class Car {
             }
         }
         for (let i = 0; i < traffic.length; i++) {
-            if (polysIntersect(this.polygon, traffic[i].polygon)) {
+            if (traffic[i].polygon && this.polygon != traffic[i].polygon && polysIntersect(this.polygon, traffic[i].polygon)) {
                 return true;
             }
         }
@@ -127,10 +134,10 @@ class Car {
         if (this.speed != 0) {
             const flip = this.speed > 0 ? 1 : -1;
             if (this.controls.left) {
-                this.angle += 0.03 * flip;
+                this.angle += this.config.flipSpeed * flip;
             }
             if (this.controls.right) {
-                this.angle -= 0.03 * flip;
+                this.angle -= this.config.flipSpeed * flip;
             }
         }
 

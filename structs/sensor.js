@@ -1,9 +1,7 @@
 class Sensor {
-    constructor(car) {
+    constructor(car, config) {
         this.car = car;
-        this.rayCount = 5;
-        this.rayLength = 150;
-        this.raySpread = Math.PI / 2;
+        this.config = config;
 
         this.rays = [];
         this.readings = [];
@@ -64,26 +62,26 @@ class Sensor {
 
     #castRays() {
         this.rays = [];
-        for (let i = 0; i < this.rayCount; i++) {
+        for (let i = 0; i < this.config.rayCount; i++) {
             const rayAngle = lerp(
-                this.raySpread / 2,
-                -this.raySpread / 2,
-                this.rayCount == 1 ? 0.5 : i / (this.rayCount - 1)
+                this.config.raySpread / 2,
+                -this.config.raySpread / 2,
+                this.config.rayCount == 1 ? 0.5 : i / (this.config.rayCount - 1)
             ) + this.car.angle;
 
             const start = { x: this.car.x, y: this.car.y };
             const end = {
                 x: this.car.x -
-                    Math.sin(rayAngle) * this.rayLength,
+                    Math.sin(rayAngle) * this.config.rayLength,
                 y: this.car.y -
-                    Math.cos(rayAngle) * this.rayLength
+                    Math.cos(rayAngle) * this.config.rayLength
             };
             this.rays.push([start, end]);
         }
     }
 
     draw(ctx) {
-        for (let i = 0; i < this.rayCount; i++) {
+        for (let i = 0; i < this.config.rayCount; i++) {
             let end = this.rays[i][1];
             if (this.readings[i]) {
                 end = this.readings[i];

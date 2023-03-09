@@ -4,19 +4,22 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <canvas id="carCanvas"></canvas>
+    <canvas id="roadCanvas"></canvas>
     <div id="verticalButtons">
-        <button onclick="save()">💾</button>
-        <button onclick="discard()">🗑️</button>
+        <button onclick="reset()">🔄</button>
+        <button onclick="saveBrain()">💾</button>
+        <button onclick="discardBrain()">🗑️</button>
     </div>
     <canvas id="networkCanvas"></canvas>
-    <script src="visualizer.js"></script>
-    <script src="network.js"></script>
-    <script src="sensor.js"></script>
-    <script src="utils.js"></script>
-    <script src="road.js"></script>
-    <script src="controls.js"></script>
-    <script src="car.js"></script>
+    <script src="configs/sensor-config.js"></script>
+    <script src="configs/car-config.js"></script>
+    <script src="utils/visualizer.js"></script>
+    <script src="ai/network.js"></script>
+    <script src="structs/sensor.js"></script>
+    <script src="utils/utils.js"></script>
+    <script src="structs/road.js"></script>
+    <script src="structs/controller.js"></script>
+    <script src="structs/car.js"></script>
     <script src="main.js"></script>
 </body>
 </html>

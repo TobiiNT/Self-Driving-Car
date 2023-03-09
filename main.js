@@ -1,92 +1,129 @@
-const carCanvas = document.getElementById("carCanvas");
-carCanvas.width = 200;
+const roadCanvas = document.getElementById("roadCanvas");
 const networkCanvas = document.getElementById("networkCanvas");
-networkCanvas.width = 300;
 
-const carCtx = carCanvas.getContext("2d");
+const roadCtx = roadCanvas.getContext("2d");
 const networkCtx = networkCanvas.getContext("2d");
 
-const road = new Road(carCanvas.width / 2, carCanvas.width * 0.9);
+roadCanvas.width = 300;
+networkCanvas.width = 300;
 
-const N = 100;
-const cars = generateCars(N);
-let bestCar = cars[0];
-if (localStorage.getItem("bestBrain")) {
-    for (let i = 0; i < cars.length; i++) {
-        cars[i].brain = JSON.parse(
-            localStorage.getItem("bestBrain"));
-        if (i != 0) {
-            NeuralNetwork.mutate(cars[i].brain, 0.1);
+const totalLane = 5;
+const totalCar = 100;
+const totalTraffic = 100;
+const leastDistanceBetweenCars = 200;
+
+let middleLane = Math.floor(totalLane / 2);
+let rightRoad = null;
+let cars = [];
+let traffic = [];
+let bestCar = null;
+let myCar = null;
+
+reset();
+
+
+function reset() {
+    rightRoad = new Road(roadCanvas.width / 2, roadCanvas.width * 0.9, totalLane);
+    cars = generateAICars(totalCar);
+
+    myCar = generateMyCar();
+    cars.push(myCar);
+    bestCar = cars[0];
+    if (localStorage.getItem("bestBrain")) {
+        for (let i = 0; i < cars.length; i++) {
+            cars[i].brain = JSON.parse(
+                localStorage.getItem("bestBrain"));
+            if (i != 0) {
+                NeuralNetwork.mutate(cars[i].brain, 0.1);
+            }
+        }
+    }
+
+    traffic = [];
+    for (let i = 0; i < totalTraffic; i++) {
+        let laneRemains = Array.from(Array(totalLane).keys());
+        for (let j = 0; j < totalLane / 2; j++) {
+            const randomIndex = Math.floor(Math.random() * laneRemains.length);
+            const randomLane = laneRemains[randomIndex];
+            laneRemains.splice(randomIndex, 1);
+
+            let config = new CarConfig("DUMMY", 1, getRandomColor());
+            let car = new Car(rightRoad.getLaneCenter(randomLane), -(totalTraffic * leastDistanceBetweenCars) + i * leastDistanceBetweenCars, config);
+            traffic.push(car);
         }
     }
 }
 
-const traffic = [];
-const total = 100;
-for (let i = 0; i < total; i++) {
-    let laneRemains = [0, 1, 2];
-    for (let j = 0; j < 2; j++) {
-        const randomIndex = Math.floor(Math.random() * laneRemains.length);
-        const randomLane = laneRemains[randomIndex];
-        laneRemains.splice(randomIndex, 1);
-
-        traffic.push(
-            new Car(road.getLaneCenter(randomLane), -(total * 150) + i * 150, 30, 50, "DUMMY", 2, getRandomColor())
-        );
-    }
-}
-
-animate();
-
-function save() {
+function saveBrain() {
     localStorage.setItem("bestBrain",
         JSON.stringify(bestCar.brain));
 }
 
-function discard() {
+function discardBrain() {
     localStorage.removeItem("bestBrain");
 }
 
-function generateCars(N) {
+function generateMyCar() {
+    let config = new CarConfig("KEYS", 3, 'red');
+    let car = new Car(rightRoad.getLaneCenter(middleLane), 0, config);
+    car.addSensor(new SensorConfig(6));
+
+    return car;
+}
+
+function generateAICars(N) {
     const cars = [];
     for (let i = 1; i <= N; i++) {
-        cars.push(new Car(road.getLaneCenter(1), 100, 30, 50, "AI"));
+        let config = new CarConfig("AI", 3, 'blue');
+        let car = new Car(rightRoad.getLaneCenter(middleLane), 0, config);
+        car.addSensor(new SensorConfig(6));
+        car.addBrain(5);
+
+        cars.push(car);
     }
     return cars;
 }
 
+animate();
+
+
+
 function animate(time) {
+    let allTraffic = cars.concat(traffic);
     for (let i = 0; i < traffic.length; i++) {
-        traffic[i].update(road.borders, []);
+        traffic[i].update(rightRoad.borders, allTraffic);
     }
     for (let i = 0; i < cars.length; i++) {
-        cars[i].update(road.borders, traffic);
+        cars[i].update(rightRoad.borders, traffic);
     }
     bestCar = cars.find(
         c => c.y == Math.min(
             ...cars.map(c => c.y)
         ));
 
-    carCanvas.height = window.innerHeight;
+    roadCanvas.height = window.innerHeight;
     networkCanvas.height = window.innerHeight;
 
-    carCtx.save();
-    carCtx.translate(0, -bestCar.y + carCanvas.height * 0.7);
+    roadCtx.save();
+    roadCtx.translate(0, -bestCar.y + roadCanvas.height * 0.8);
 
-    road.draw(carCtx);
+    rightRoad.draw(roadCtx);
     for (let i = 0; i < traffic.length; i++) {
-        traffic[i].draw(carCtx);
+        traffic[i].draw(roadCtx);
     }
-    carCtx.globalAlpha = 0.2;
+    roadCtx.globalAlpha = 0.2;
     for (let i = 0; i < cars.length; i++) {
-        cars[i].draw(carCtx);
+        cars[i].draw(roadCtx);
     }
-    carCtx.globalAlpha = 1;
-    bestCar.draw(carCtx, true);
+    roadCtx.globalAlpha = 1;
+    bestCar.draw(roadCtx, true);
+    myCar.draw(roadCtx, true);
 
-    carCtx.restore();
+    roadCtx.restore();
 
     networkCtx.lineDashOffset = -time / 50;
-    Visualizer.drawNetwork(networkCtx, bestCar.brain);
+    if (bestCar.brain) {
+        Visualizer.drawNetwork(networkCtx, bestCar.brain);
+    }
     requestAnimationFrame(animate);
 }

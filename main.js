@@ -26,8 +26,8 @@ function reset() {
     rightRoad = new Road(roadCanvas.width / 2, roadCanvas.width * 0.9, totalLane);
     cars = generateAICars(totalCar);
 
-    myCar = generateMyCar();
-    cars.push(myCar);
+    //myCar = generateMyCar();
+    //cars.push(myCar);
     bestCar = cars[0];
     if (localStorage.getItem("bestBrain")) {
         for (let i = 0; i < cars.length; i++) {
@@ -126,5 +126,6 @@ function drawCars(roadCtx) {
     }
     roadCtx.globalAlpha = 1;
     bestCar.draw(roadCtx, true);
-    myCar.draw(roadCtx, true);
+    if (myCar)
+        myCar.draw(roadCtx, true);
 }
